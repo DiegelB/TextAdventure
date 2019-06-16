@@ -13,10 +13,19 @@ class MainCharacter():
         self.attack = random.randint(2,3)
         self.deathCount = 0
         self.killCount = 0
+        self.fearLevel = 0
     def trainAttack(self, increaseAmt):
         self.attack = self.attack + increaseAmt
     def heal(self, increaseAmt):
         self.hp = self.hp + increaseAmt
+    def increaseFear(self):
+        self.fearLevel = self.fearLevel + 1
+    def resetFear(self):
+        self.fearLevel = 0
+    def giveGold(self, increaseAmt):
+        self.gold = self.gold + increaseAmt
+    def giveXp(self, increaseAmt):
+        self.xp = self.xp + increaseAmt
 
 class EasyBadGuy():
     def __init__(self, xp = 5):
@@ -56,6 +65,22 @@ class HardBadGuy():
     def addAtk(self, increaseAmt):
         self.attack = self.attack + increaseAmt
 
+#generates an adventure for the player. tracks amout of mobs and possible paths the player can take
+class WalkingPath():
+    def __init__(self, name, amtOfPaths, maxMobs, endingMaxGold):
+        self.name = name
+        self.amtOfPaths = amtOfPaths
+        self.playerWalkedPaths = 0
+        self.amtOfMobs = random.randint(1, maxMobs)
+        self.endingGold = random.randint(30, endingMaxGold)
+    def walkPath(self):
+        self.amtOfPaths = self.amtOfPaths - 1
+    def mobEncounter(self):
+        self.amtOfMobs = self.amtOfMobs - 1
+    def giveGold(self, p1):
+        p1.gold = p1.gold + self.endingGold
+
+
 #The main funtion. It starts the program then sets the players character
 #whether its loaded in or created.
 def main():
@@ -91,85 +116,91 @@ def startScreen():
 def mainLoop(p1):
     userChoice = 0
     #the loop of the program. everything comes back to here unless they press 4 to exit
-    while (userChoice != '4'):
+    while (userChoice != 'exit'):
         os.system("CLS")
-
-        #checks to see if the player has enough health
-        if (p1.hp <= 0):
-            death(p1)
         #sees whether the player wants to fight, shop, train, or exit
         userChoice = townInfo()
 
-        if (userChoice == '1'): #fight choice
-            fightScreen(p1)
-        elif (userChoice == '2'): #shop choice
+        if (userChoice == 'walk'): #main game play loop
+            if(p1.hp <= 0):
+                print("Your health is too low, please go heal.")
+                adv()
+            else:
+                walkAround(p1)
+        elif (userChoice == 'gold'): #shop choice
             #the shop is where the player can buy stat upgrade trough weapons and armor
             print("shop place holder")
+            print("gold: " + str(p1.gold))
             adv()
-        elif (userChoice == '3'): #learn spells choice
+        elif (userChoice == 'train'): #learn spells choice
             #the libray is where the player learns new attacks and sees their stats
             trainScreen(p1)
+
     exit
 
 #The screen to call up when you encounter a monster
 def fightScreen(p1):
-    while(True):
+    os.system("CLS")
+
+    #populates and enemy for the fight.
+    enemy = enemyEncounter(p1)
+
+    print(p1.name + " stumbled apon a level " + str(enemy.level) +" "+ enemy.name + "!\n")
+    printInfo(enemy)
+    adv()
+
+    #checks to see if the current enemy is dead or not
+    while (enemy.hp > 0):
         os.system("CLS")
 
-        #populates and enemy for the fight.
-        enemy = enemyEncounter(p1)
-        os.system("CLS")
-
-        print(p1.name + " stumbled apon a level " + str(enemy.level) +" "+ enemy.name + "!\n")
         printInfo(enemy)
-        adv()
-
-        #checks to see if the current enemy is dead or not
-        while (enemy.hp > 0):
+        print()
+        printInfo(p1)
+        print()
+        #prints the enemy infor ^^ then asks the player what to do
+        playerOption = input("- What would you like to do? -\n"+
+                         "'Fight'\n"+
+                         "'Run'\n>>")
+        playerOption.lower()
+        # attacks the enemy
+        if (playerOption == 'fight'):
             os.system("CLS")
+            attack(p1, enemy)
+            #enemy only attacks back if their lucky enough
+            if (enemy.hp > 0):
+                print("\nThe " + enemy.name + " attacks!")
+                #tests the enemies luck against 1-3 (1 being lowest, 3 being never misses)
+                if (enemy.luck >= random.randint(1,3)):
+                    attack(enemy, p1)
 
-            printInfo(enemy)
-            print()
-            printInfo(p1)
-            print()
-            #prints the enemy infor ^^ then asks the player what to do
-            playerOption = input("- What would you like to do? -\n"+
-                             "1. Fight\n"+
-                             "2. Run\n>>")
-            # attacks the enemy
-            if (playerOption == '1'):
-                os.system("CLS")
-                attack(p1, enemy)
-                #enemy only attacks back if their lucky enough
-                if (enemy.hp > 0):
-                    print("The " + enemy.name + " attacks!")
-                    #tests the enemies luck against 1-3 (1 being lowest, 3 being never misses)
-                    if (enemy.luck >= random.randint(1,3)):
-                        attack(enemy, p1)
-
-                        #checks to see if the player is dead or not
-                        if (p1.hp <= 0):
-                            death(p1)
-                            return
-                        else:
-                            adv()
-                    else:
-                        print("But misses!")
+                    #checks to see if the player is dead or not
+                    if (p1.hp <= 0):
                         adv()
-            elif (playerOption == '2'):
-                os.system("CLS")
-                #WIP WIP WIP
-                #if you run away you get no exp. will be a random chance though
-                print("You coward!")
-                enemy.hp = 0
-                adv()
-                return
+                        death(p1)
+                        return
+                    else:
+                        adv()
+                else:
+                    print("But misses!")
+                    adv()
+        elif (playerOption == 'run'):
+            os.system("CLS")
+            #WIP WIP WIP
+            #if you run away you get a fear level. if its too high you cant fight anymore.
+            print("You coward!")
+            p1.increaseFear()
+            print("Fear level now: " + str(p1.fearLevel))
+            adv()
+            break
 
+    if(enemy.hp <= 0):
         adv()
         #prints out the player xp amount if the enemy is beaten
         os.system("CLS")
         gainXp(p1, enemy)
         adv()
+    else:
+        return
 
 #a place where the player can train stats and heal using exp that they have earned.
 #will add abilites
@@ -178,11 +209,14 @@ def trainScreen(p1):
         os.system("CLS")
         printInfo(p1)
 
-        playerChoice = input("1. Train Attack\n" +
-                             "2. Heal\n" +
-                             "3. Exit\n>>")
+        playerChoice = input("'Train' Attack\n" +
+                             "'Heal'\n" +
+                             "'Revive'\n" +
+                             "'Exit'\n>>")
+        playerChoice.lower()
 
-        if (playerChoice == '1'):
+        #Checks to se if the player has enough xp to level attack
+        if (playerChoice == 'train'):
             if(p1.xp >= 5):
                 p1.xp = p1.xp - 5
                 p1.trainAttack(1)
@@ -190,16 +224,80 @@ def trainScreen(p1):
                 print("Not enough experience points.\n Go fight more mobs!")
                 adv()
 
-        elif (playerChoice == '2'):
+        #Checks to see if the player has exp to heal themselves,
+        elif (playerChoice == 'heal'):
             if(p1.xp >= 3):
                 p1.xp = p1.xp - 3
                 p1.heal(2)
             else:
                 print("Not enough experience points.\n Go fight more mobs!")
                 adv()
+        elif (playerChoice == 'revive'):
+            if(p1.hp <= 0):
+                p1.heal(10)
+            else:
+                print("Only for dead players!")
+                adv()
 
-        elif (playerChoice == '3'):
+        elif (playerChoice == 'exit'):
             return
+
+#this is the main game play loop. You get a pre-generated place to walk through
+#it has random mob encounters as well as extra goodie and loot to earn.
+def walkAround(p1):
+    #generates the (name, amount of path before win, max amount of mobs before win, max amount of gold youll earn)
+    playerPathway = WalkingPath("Woodland Coast", 6, 10, 100)
+
+    #checks to see if the pathway is completed or not
+    while(playerPathway.amtOfPaths > 0):
+        if(p1.hp <= 0): #if player is dead they cant continue
+            return
+        else:
+            if(p1.fearLevel <= 2): #if player ran away too many times they cant continue or win
+                os.system("CLS")
+                print("Welcome to " + playerPathway.name + " " + p1.name + "\n")
+                printInfo(p1)
+
+                print(p1.name + "'s" + " fear level: " + str(p1.fearLevel))
+                playerChoice = input("'Walk' forward or 'return' to town?\n>>")
+                playerChoice.lower()
+
+                if(playerChoice == 'walk'):
+                    playerPathway.walkPath() #decreases 1 every time you walk throughh
+                    if(playerPathway.amtOfMobs > 0):
+                        if(random.randint(1,4) == 3): #75% chance youll get a mob encounter
+                            print("\nYou advanced safely forward.\n")
+                            adv()
+                        else:
+                            playerPathway.mobEncounter() #descreases 1 eveytime you fight a mob
+                            fightScreen(p1)
+                    else:
+                        #if you beat all the mobs before advancing throuhh the are you get a bonus
+                        print("\nYou've killed all the mobs in this area!")
+                        print("Here is some extra goodies")
+                        print("+100 gold, +100 xp")
+                        p1.giveGold(100)
+                        p1.giveXp(100)
+                        playerPathway.amtOfPaths = 0
+                        adv()
+                elif(playerChoice == 'return'):
+                    p1.resetFear()
+                    return
+            else:
+                print("You've ran away too many times!")
+                adv()
+                p1.resetFear()
+                return
+
+    #if you beat all mobs or advance through the entire area (amtOfPaths) then you get loot!
+    print("\nYou've left "+ playerPathway.name + ".")
+    print(p1.name + " earned " + str(playerPathway.endingGold) + " gold.")
+    playerPathway.giveGold(p1)
+    adv()
+
+
+
+
 
 #when the player dies during their adventure they come here to print out stats and start over
 def death(p1):
@@ -209,8 +307,8 @@ def death(p1):
     print("You earned " + str(p1.xp) + " exp!")
     p1.deathCount = p1.deathCount + 1
     print("You have died " + str(p1.deathCount) + " times on your journey so far!")
-    p1.hp = 10
     adv()
+
 
 #choses what enemy the player faces based on how many kills.
 #this needs more complexity
@@ -260,13 +358,14 @@ def townInfo():
 
     print("Welcome to Stabby Village!")
     print("What would you like to do?\n")
-    print("1. Fight monsters and gain rewards!")
-    print("2. Spend that sweet, sweet gold.")
-    print("3. Train in the magical arts.")
-    print("4. Exit the town.")
+    print("'Walk' around to find monsters and loot!")
+    print("Spend that sweet, sweet 'gold'.")
+    print("'Train' in the magical arts.")
+    print("'Exit' the town.")
 
     userChoice = input(">>")
 
+    userChoice.lower()
     return userChoice
 
 #This is where the player is sent to to create their new character.
@@ -281,7 +380,8 @@ def printInfo(character):
     print("- " + character.name + " LV. " + str(character.level) + " -\n" +
           "Health = " + str(character.hp) + "\n" +
           "Attack = " + str(character.attack) + "\n" +
-          "XP = " + str(character.xp) + "\n")
+          "XP = " + str(character.xp) + "\n" +
+          "Gold = " + str(character.gold) + "\n")
 
 #advances the screen
 def adv():
