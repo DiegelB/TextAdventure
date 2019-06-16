@@ -3,7 +3,7 @@ A fun text adventure that im using to practice python
 
 How To Play:
 
--Create a new character if you have never played before. This will create you a load file that you can then load into on your next session.
+- Create a new character if you have never played before. This will create you a load file that you can then load into on your next session.
 - Load in a previous character by typing in the characters name 
 - Each option menu requires you to type in the option you want (CASE IN-SENSITIVE). Example:
   - 'fight', or 'train'
