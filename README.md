@@ -8,7 +8,7 @@ How To Play:
 - Each option menu requires you to type in the option you want (CASE IN-SENSITIVE). Example:
   - 'fight', or 'train'
   - the player types  in >>fight
--When you are finished playing, just return to town and type in 'exit' to save and close.
+- When you are finished playing, just return to town and type in 'exit' to save and close.
 
 This is a simple text adventure game that allows the player to
 - create a character if they have never played before
